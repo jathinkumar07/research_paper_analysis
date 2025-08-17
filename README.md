@@ -1,134 +1,193 @@
-﻿# AI Research Paper Summarizer & Critic
+# AI Research Critic
 
-## 📌 Project Overview
-This project is an **AI-powered tool for analyzing research papers**.  
-It allows users to upload a PDF research paper and receive:  
-- 📑 **Summarization** of the paper’s key ideas.  
-- 📝 **Critique/Review block** with strengths, weaknesses, methodology insights.  
-- 📊 **Plagiarism & citation analysis** (basic implemented, advanced pending).  
-- ⚡ Planned: **Fact-checking & visualization modules**.  
+A full-stack application for analyzing research papers with AI-powered tools including plagiarism detection, citation validation, content summarization, and research critique.
 
-Built for academic use, this project aims to **reduce research overload** and help students, researchers, and reviewers quickly understand and critique scientific papers.
+## Features
 
----
+- 🔐 **Secure Authentication** - JWT-based auth with role-based access control
+- 📄 **PDF Upload & Processing** - Extract text and metadata from research papers
+- 🤖 **AI-Powered Analysis**:
+  - Document summarization (HuggingFace BART + fallback)
+  - Plagiarism detection via TF-IDF similarity
+  - Citation validation using Semantic Scholar API
+  - Research methodology critique
+- 📊 **Interactive Dashboard** - View analysis results with charts and tables
+- 📋 **PDF Report Generation** - Professional analysis reports with ReportLab
+- 🎨 **Modern UI** - React with Tailwind CSS
 
-## ✅ Features Completed (till now)
+## Tech Stack
+
 ### Backend
-- [x] **PDF Text Extraction** (PyMuPDF → extract raw text).  
-- [x] **Summarization Module** (HuggingFace Transformers – BART).  
-- [x] **Critique Block** (auto-generated feedback on clarity, novelty, methodology, impact).  
-- [x] **Basic Plagiarism Detection** (TF-IDF + cosine similarity stub – ready to extend).  
-- [x] **Flask API** with /analyze endpoint for PDF uploads.  
-- [x] **CORS Enabled** → backend ready for frontend integration.  
+- **Python 3.10+** with Flask
+- **SQLAlchemy** with SQLite (dev) / PostgreSQL (prod)
+- **JWT Authentication** with Flask-JWT-Extended
+- **PDF Processing** with PyMuPDF
+- **AI/ML**: HuggingFace Transformers, scikit-learn
+- **Report Generation**: ReportLab
 
 ### Frontend
-- [x] React project scaffolded (
-px create-react-app frontend).  
-- [x] Installed dependencies: **TailwindCSS, Axios, Recharts**.  
-- [ ] UI for PDF upload & displaying results → **not coded yet**.  
-- [ ] Integration with backend API → **pending**.  
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **Recharts** for data visualization
+- **Axios** for API communication
 
----
+## Quick Start
 
-## 🛠️ Tech Stack
-- **Backend**: Python 3.12, Flask, Flask-CORS, PyMuPDF, HuggingFace Transformers, scikit-learn  
-- **Frontend**: React.js, TailwindCSS, Axios, Recharts  
-- **Other Tools**: Git, PowerShell, Virtualenv  
+### Prerequisites
+- Python 3.10+
+- Node.js 16+
+- npm or yarn
 
----
+### Backend Setup
 
-## ⚙️ Backend Setup
+1. **Navigate to backend directory**
+```bash
+cd backend
+```
 
-### 1️⃣ Create Virtual Environment
-`powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1   # Windows PowerShell
-2️⃣ Install Dependencies
-
+2. **Install Python dependencies**
+```bash
 pip install -r requirements.txt
-(We generated requirements.txt using pip freeze > requirements.txt.)
+```
 
-3️⃣ Run Backend
+3. **Initialize the database**
+```bash
+flask db init
+flask db migrate -m "Initial migration"
+flask db upgrade
+```
 
-python backend/app.py
-Runs Flask server at: http://127.0.0.1:5000
+4. **Start the Flask server**
+```bash
+python app.py
+```
 
-Endpoint available:
+Backend will run on `http://127.0.0.1:5000`
 
-POST /analyze → accepts a PDF file, returns JSON with summary and critique.
+### Frontend Setup
 
-4️⃣ Example Test (via PowerShell / curl)
-powershell
-Copy
-Edit
-curl -X POST http://127.0.0.1:5000/analyze -F "file=@sample.pdf"
-Response JSON:
-
-json
-Copy
-Edit
-{
-  "summary": "This paper explores...",
-  "critique": "Strengths: ... Weaknesses: ..."
-}
-⚙️ Frontend Setup (So far)
-1️⃣ Create React App
-
-npx create-react-app frontend
+1. **Navigate to frontend directory**
+```bash
 cd frontend
-2️⃣ Install Dependencies
+```
 
-npm install axios recharts
-npm install -D tailwindcss postcss autoprefixer
-3️⃣ Tailwind Init (troubleshooting needed in Windows PowerShell)
+2. **Install dependencies**
+```bash
+npm install
+```
 
-npx tailwindcss init -p
-⚠️ Currently, Tailwind CLI is not detected in PowerShell.
-(Workaround: use npx tailwindcss init -p in Git Bash / CMD, or manually create tailwind.config.js.)
+3. **Start the React development server**
+```bash
+npm start
+```
 
-4️⃣ Current Status
-React project exists at /frontend.
+Frontend will run on `http://localhost:3000`
 
-No UI components yet.
+## Usage
 
-Next step: build PDF Upload form + connect to backend API.
+1. **Register/Login** - Create an account or sign in
+2. **Upload PDF** - Go to Upload page and select a research paper
+3. **Run Analysis** - The system will automatically analyze the document
+4. **View Results** - See summary, plagiarism score, citations, and critique
+5. **Generate Report** - Download professional PDF reports
+6. **Manage Reports** - View and download previous reports
 
-🚀 Usage Flow (Backend Only – Current)
-Start backend server.
+## API Endpoints
 
-Upload sample.pdf via curl or Postman.
+### Authentication
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login user
+- `POST /auth/refresh` - Refresh JWT token
 
-Get JSON response with summary + critique.
+### Documents
+- `POST /documents/upload` - Upload PDF file
+- `GET /documents/:id` - Get document details
+- `GET /documents` - List user documents
 
-📌 Current Status
-✅ Backend core working (PDF → Summary + Critique).
+### Analysis
+- `POST /analysis/run` - Run analysis on document
+- `GET /analysis/:id` - Get analysis results
+- `GET /analysis` - List user analyses
 
-⚠️ Frontend scaffolded, but no UI yet.
+### Reports
+- `POST /reports/:analysis_id/generate` - Generate PDF report
+- `GET /reports/:report_id/download` - Download report
+- `GET /reports` - List user reports
 
-❌ Not integrated (user still needs Postman/curl).
+## Configuration
 
-📌 Next Steps / Future Work
- Build React frontend UI:
+### Backend Environment Variables (.env)
+```
+FLASK_ENV=development
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret
+SQLALCHEMY_DATABASE_URI=sqlite:///instance/app.db
+MAX_UPLOAD_MB=25
+USE_HF_SUMMARIZER=true
+```
 
-File upload button (PDF).
+### Frontend Environment Variables (.env)
+```
+REACT_APP_API_URL=http://127.0.0.1:5000
+```
 
-Display summary + critique in styled cards.
+## Project Structure
 
-Show plagiarism score & charts with Recharts.
+```
+ai-research-critic/
+├── backend/
+│   ├── src/
+│   │   ├── models/          # Database models
+│   │   ├── routes/          # API endpoints
+│   │   ├── services/        # Business logic
+│   │   └── utils/           # Utilities
+│   ├── corpus/              # Reference documents for plagiarism
+│   ├── uploads/             # Uploaded PDFs
+│   ├── reports/             # Generated reports
+│   └── app.py              # Flask application
+└── frontend/
+    ├── src/
+    │   ├── components/      # Reusable UI components
+    │   ├── pages/          # Application pages
+    │   ├── contexts/       # React contexts
+    │   └── api/            # API configuration
+    └── public/             # Static assets
+```
 
- Debug TailwindCSS setup for styling.
+## Development Notes
 
- Add citation + fact-checking modules.
+- **Database**: SQLite for development, easily switchable to PostgreSQL
+- **Authentication**: JWT tokens with automatic refresh
+- **File Security**: UUIDs for stored filenames, size validation
+- **Error Handling**: Centralized error handling with proper HTTP codes
+- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
 
- Deploy backend (Render/Heroku) & frontend (Vercel/Netlify).
+## Production Deployment
 
-👨‍💻 Contributors
-Jathin – Backend development, project setup.
+1. **Backend**:
+   - Set `FLASK_ENV=production`
+   - Use PostgreSQL database
+   - Configure proper CORS origins
+   - Use production WSGI server (Gunicorn)
 
-(Future) Teammates for frontend integration & testing.
+2. **Frontend**:
+   - Build: `npm run build`
+   - Serve static files with nginx/Apache
+   - Update API URL for production backend
 
-📝 Notes
-The repo includes .gitignore for .venv and node_modules → so GitHub repo size stays small.
+## Contributing
 
-Use requirements.txt + npm install to reproduce environment.
+1. Fork the repository
+2. Create feature branch
+3. Make changes with tests
+4. Submit pull request
+
+## License
+
+MIT License - see LICENSE file for details.
+
+---
+
+**Built with ❤️ using Flask, React, and AI-powered analysis tools.**
 
