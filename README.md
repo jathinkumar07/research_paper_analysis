@@ -1,193 +1,340 @@
 # AI Research Critic
 
-A full-stack application for analyzing research papers with AI-powered tools including plagiarism detection, citation validation, content summarization, and research critique.
+A complete full-stack application for analyzing research papers with AI-powered tools including plagiarism detection, citation validation, fact-checking, and document summarization.
 
-## Features
+## 🚀 Quick Start for Absolute Beginners
 
-- 🔐 **Secure Authentication** - JWT-based auth with role-based access control
-- 📄 **PDF Upload & Processing** - Extract text and metadata from research papers
-- 🤖 **AI-Powered Analysis**:
-  - Document summarization (HuggingFace BART + fallback)
-  - Plagiarism detection via TF-IDF similarity
-  - Citation validation using Semantic Scholar API
-  - Research methodology critique
-- 📊 **Interactive Dashboard** - View analysis results with charts and tables
-- 📋 **PDF Report Generation** - Professional analysis reports with ReportLab
-- 🎨 **Modern UI** - React with Tailwind CSS
+This guide will help you get the application running on your computer, even if you're new to programming.
 
-## Tech Stack
+### 📋 Prerequisites (What You Need to Install First)
 
-### Backend
-- **Python 3.10+** with Flask
-- **SQLAlchemy** with SQLite (dev) / PostgreSQL (prod)
-- **JWT Authentication** with Flask-JWT-Extended
-- **PDF Processing** with PyMuPDF
-- **AI/ML**: HuggingFace Transformers, scikit-learn
-- **Report Generation**: ReportLab
+Before starting, you need to install these tools on your computer:
 
-### Frontend
-- **React 18** with TypeScript
-- **Tailwind CSS** for styling
-- **React Router** for navigation
-- **Recharts** for data visualization
-- **Axios** for API communication
+1. **Python 3.10 or higher**
+   - Download from: https://www.python.org/downloads/
+   - During installation, **CHECK THE BOX** "Add Python to PATH"
+   - Verify installation: Open terminal/command prompt and type `python --version`
 
-## Quick Start
+2. **Node.js 16 or higher**
+   - Download from: https://nodejs.org/
+   - Choose the "LTS" (Long Term Support) version
+   - This automatically installs `npm` (Node Package Manager)
+   - Verify installation: Open terminal/command prompt and type `node --version`
 
-### Prerequisites
-- Python 3.10+
-- Node.js 16+
-- npm or yarn
+3. **Git** (if not already installed)
+   - Download from: https://git-scm.com/downloads
+   - Verify installation: Type `git --version`
 
-### Backend Setup
+### 📥 Step 1: Download the Project
 
-1. **Navigate to backend directory**
+1. **Clone the repository** (download the code to your computer):
+```bash
+git clone <your-repository-url>
+cd ai-research-critic
+```
+
+OR download as ZIP file and extract it, then navigate to the folder.
+
+### 🐍 Step 2: Backend Setup (Python/Flask Server)
+
+1. **Navigate to the backend folder**:
 ```bash
 cd backend
 ```
 
-2. **Install Python dependencies**
+2. **Create a virtual environment** (isolated Python environment):
+```bash
+# On Windows:
+python -m venv venv
+venv\Scripts\activate
+
+# On macOS/Linux:
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Install Python dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Initialize the database**
-```bash
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-```
-
-4. **Start the Flask server**
-```bash
-python app.py
-```
-
-Backend will run on `http://127.0.0.1:5000`
-
-### Frontend Setup
-
-1. **Navigate to frontend directory**
-```bash
-cd frontend
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Start the React development server**
-```bash
-npm start
-```
-
-Frontend will run on `http://localhost:3000`
-
-## Usage
-
-1. **Register/Login** - Create an account or sign in
-2. **Upload PDF** - Go to Upload page and select a research paper
-3. **Run Analysis** - The system will automatically analyze the document
-4. **View Results** - See summary, plagiarism score, citations, and critique
-5. **Generate Report** - Download professional PDF reports
-6. **Manage Reports** - View and download previous reports
-
-## API Endpoints
-
-### Authentication
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login user
-- `POST /auth/refresh` - Refresh JWT token
-
-### Documents
-- `POST /documents/upload` - Upload PDF file
-- `GET /documents/:id` - Get document details
-- `GET /documents` - List user documents
-
-### Analysis
-- `POST /analysis/run` - Run analysis on document
-- `GET /analysis/:id` - Get analysis results
-- `GET /analysis` - List user analyses
-
-### Reports
-- `POST /reports/:analysis_id/generate` - Generate PDF report
-- `GET /reports/:report_id/download` - Download report
-- `GET /reports` - List user reports
-
-## Configuration
-
-### Backend Environment Variables (.env)
+4. **Create environment file for backend**:
+   - Create a file named `.env` in the `backend/` folder
+   - Add this content to the file:
 ```
 FLASK_ENV=development
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
+SECRET_KEY=your-super-secret-key-change-this-in-production
+JWT_SECRET_KEY=your-jwt-secret-key-change-this-too
 SQLALCHEMY_DATABASE_URI=sqlite:///instance/app.db
 MAX_UPLOAD_MB=25
 USE_HF_SUMMARIZER=true
 ```
 
-### Frontend Environment Variables (.env)
-```
-REACT_APP_API_URL=http://127.0.0.1:5000
+5. **Start the backend server**:
+```bash
+python app.py
 ```
 
-## Project Structure
+✅ **Success Check**: You should see:
+```
+* Running on http://127.0.0.1:5000
+* Debug mode: on
+```
+
+**Keep this terminal window open** - the backend server needs to stay running.
+
+### ⚛️ Step 3: Frontend Setup (React Application)
+
+**Open a NEW terminal window** (keep the backend running in the first one).
+
+1. **Navigate to the frontend folder**:
+```bash
+cd frontend
+```
+
+2. **Install JavaScript dependencies**:
+```bash
+npm install
+```
+
+3. **Verify environment file**:
+   - Check that `frontend/.env` exists with this content:
+```
+REACT_APP_API_URL=http://localhost:5000
+```
+
+4. **Start the frontend development server**:
+```bash
+npm start
+```
+
+✅ **Success Check**: 
+- Your web browser should automatically open to `http://localhost:3000`
+- You should see the "AI Research Critic" homepage
+- The terminal should show "Compiled successfully!"
+
+### 🎉 Step 4: Test the Application
+
+1. **Open your web browser** to `http://localhost:3000`
+2. **Upload a PDF file** by dragging and dropping or clicking "browse to upload"
+3. **Click "Analyze Document"** - you should see a loading spinner
+4. **View results** - the page should redirect to show analysis results
+
+## 🛠️ Configuration Details
+
+### Required Environment Variables
+
+#### Backend Configuration (`backend/.env`)
+| Variable | Description | Example Value | Required |
+|----------|-------------|---------------|----------|
+| `SECRET_KEY` | Flask secret key for sessions | `your-super-secret-key` | ✅ Yes |
+| `JWT_SECRET_KEY` | JWT token encryption key | `your-jwt-secret-key` | ✅ Yes |
+| `FLASK_ENV` | Flask environment mode | `development` | ✅ Yes |
+| `SQLALCHEMY_DATABASE_URI` | Database connection string | `sqlite:///instance/app.db` | ✅ Yes |
+| `MAX_UPLOAD_MB` | Maximum file upload size | `25` | ✅ Yes |
+| `USE_HF_SUMMARIZER` | Use HuggingFace for summarization | `true` | ✅ Yes |
+
+#### Frontend Configuration (`frontend/.env`)
+| Variable | Description | Example Value | Required |
+|----------|-------------|---------------|----------|
+| `REACT_APP_API_URL` | Backend server URL | `http://localhost:5000` | ✅ Yes |
+
+### 🔑 API Keys (Optional - For Enhanced Features)
+
+The application works without API keys, but for enhanced functionality:
+
+1. **Semantic Scholar API** (for citation validation):
+   - No API key required - it's free
+   - Automatically used by the backend
+
+2. **HuggingFace API** (for better summarization):
+   - Sign up at: https://huggingface.co/
+   - Go to Settings → Access Tokens
+   - Create a new token
+   - Add to `backend/.env`: `HUGGINGFACE_API_TOKEN=your_token_here`
+
+## 📱 Application Features
+
+### 🏠 Home Page
+- **Drag & Drop Upload**: Simply drag a PDF file onto the upload area
+- **File Validation**: Automatically checks file type (PDF only) and size (≤10MB)
+- **Progress Feedback**: Shows upload progress and analysis status
+
+### 📊 Results Page
+- **AI Summary**: Intelligent document summarization
+- **Plagiarism Score**: Percentage with color-coded risk levels
+- **Citation Analysis**: List of citations with validation status
+- **Fact Checking**: Verification of factual claims
+- **Download Results**: Export analysis as JSON file
+
+### ℹ️ About Page
+- **Feature Overview**: Detailed explanation of all capabilities
+- **Technology Stack**: Complete list of technologies used
+- **Usage Instructions**: Step-by-step guide
+
+## 🔧 Troubleshooting
+
+### Common Issues and Solutions
+
+#### Backend Issues
+
+**Problem**: `ModuleNotFoundError` when starting backend
+**Solution**: Make sure you activated the virtual environment and installed dependencies:
+```bash
+cd backend
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Problem**: `Port 5000 already in use`
+**Solution**: 
+- Kill the process using port 5000: `lsof -ti:5000 | xargs kill -9`
+- Or change the port in `backend/app.py` and update `frontend/.env`
+
+**Problem**: Database errors
+**Solution**: Delete the database and recreate:
+```bash
+rm -rf backend/instance/
+python app.py  # This will recreate the database
+```
+
+#### Frontend Issues
+
+**Problem**: `npm install` fails
+**Solution**: 
+- Clear npm cache: `npm cache clean --force`
+- Delete node_modules: `rm -rf node_modules package-lock.json`
+- Reinstall: `npm install`
+
+**Problem**: "Cannot connect to backend"
+**Solution**: 
+- Ensure backend is running on port 5000
+- Check `frontend/.env` has correct URL: `REACT_APP_API_URL=http://localhost:5000`
+- Restart frontend: `npm start`
+
+**Problem**: Styling not working
+**Solution**: 
+- Ensure TailwindCSS is properly configured
+- Restart the development server: `npm start`
+
+### 🌐 Network Issues
+
+**Problem**: Can't access from other devices
+**Solution**: 
+- Backend: Change `app.run(host='0.0.0.0')` in `backend/app.py`
+- Frontend: Use `npm start -- --host 0.0.0.0`
+- Update `REACT_APP_API_URL` to use your computer's IP address
+
+## 📁 Project Structure
 
 ```
 ai-research-critic/
-├── backend/
+├── backend/                    # Flask API server
 │   ├── src/
-│   │   ├── models/          # Database models
-│   │   ├── routes/          # API endpoints
-│   │   ├── services/        # Business logic
-│   │   └── utils/           # Utilities
-│   ├── corpus/              # Reference documents for plagiarism
-│   ├── uploads/             # Uploaded PDFs
-│   ├── reports/             # Generated reports
-│   └── app.py              # Flask application
-└── frontend/
-    ├── src/
-    │   ├── components/      # Reusable UI components
-    │   ├── pages/          # Application pages
-    │   ├── contexts/       # React contexts
-    │   └── api/            # API configuration
-    └── public/             # Static assets
+│   │   ├── models/            # Database models
+│   │   ├── routes/            # API endpoints
+│   │   ├── services/          # Business logic
+│   │   └── utils/             # Helper functions
+│   ├── uploads/               # Uploaded PDF files
+│   ├── app.py                 # Main Flask application
+│   ├── config.py              # Configuration settings
+│   ├── requirements.txt       # Python dependencies
+│   └── .env                   # Backend environment variables
+├── frontend/                   # React web application
+│   ├── public/                # Static files
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   ├── pages/             # Application pages
+│   │   ├── services/          # API communication
+│   │   └── types/             # TypeScript definitions
+│   ├── package.json           # JavaScript dependencies
+│   └── .env                   # Frontend environment variables
+└── README.md                  # This file
 ```
 
-## Development Notes
+## 🔄 Development Workflow
 
-- **Database**: SQLite for development, easily switchable to PostgreSQL
-- **Authentication**: JWT tokens with automatic refresh
-- **File Security**: UUIDs for stored filenames, size validation
-- **Error Handling**: Centralized error handling with proper HTTP codes
-- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
+### Making Changes
 
-## Production Deployment
+1. **Backend Changes**:
+   - Edit files in `backend/src/`
+   - Server auto-reloads in development mode
+   - Test API endpoints at `http://localhost:5000`
 
-1. **Backend**:
-   - Set `FLASK_ENV=production`
-   - Use PostgreSQL database
-   - Configure proper CORS origins
-   - Use production WSGI server (Gunicorn)
+2. **Frontend Changes**:
+   - Edit files in `frontend/src/`
+   - Browser auto-reloads when you save files
+   - View changes at `http://localhost:3000`
 
-2. **Frontend**:
-   - Build: `npm run build`
-   - Serve static files with nginx/Apache
-   - Update API URL for production backend
+### Testing
 
-## Contributing
+**Backend Testing**:
+```bash
+cd backend
+python -m pytest tests/
+```
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes with tests
-4. Submit pull request
+**Frontend Testing**:
+```bash
+cd frontend
+npm test
+```
 
-## License
+## 🚢 Production Deployment
 
-MIT License - see LICENSE file for details.
+### Backend Production
+1. Set environment variables for production
+2. Use PostgreSQL instead of SQLite
+3. Use a production WSGI server like Gunicorn
+4. Set up reverse proxy with nginx
+
+### Frontend Production
+1. Build the application:
+```bash
+cd frontend
+npm run build
+```
+2. Serve the `build/` folder with a web server
+3. Update `REACT_APP_API_URL` to point to production backend
+
+## 🆘 Getting Help
+
+### If You're Stuck
+
+1. **Check the terminal output** - error messages usually tell you what's wrong
+2. **Verify all prerequisites** are installed correctly
+3. **Make sure both servers are running** (backend on port 5000, frontend on port 3000)
+4. **Check environment files** exist and have correct values
+5. **Try restarting both servers** - sometimes this fixes connection issues
+
+### Common Beginner Mistakes
+
+❌ **Forgetting to activate virtual environment** for Python
+✅ **Always run** `source venv/bin/activate` before starting backend
+
+❌ **Not keeping backend running** when testing frontend
+✅ **Keep both terminals open** - one for backend, one for frontend
+
+❌ **Wrong file paths** when creating .env files
+✅ **Create .env files in the correct directories**: `backend/.env` and `frontend/.env`
+
+❌ **Using wrong URLs** in environment files
+✅ **Use exact URLs**: `http://localhost:5000` (not https, not 127.0.0.1)
+
+## 📞 Support
+
+If you encounter issues:
+1. Check the troubleshooting section above
+2. Verify all prerequisites are installed
+3. Make sure you followed each step exactly as written
+4. Check that both servers are running without errors
 
 ---
+
+**🎯 Success Indicators:**
+- Backend terminal shows: "Running on http://127.0.0.1:5000"
+- Frontend opens automatically in your browser at http://localhost:3000
+- You can upload a PDF file and see analysis results
 
 **Built with ❤️ using Flask, React, and AI-powered analysis tools.**
 
