@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify
 import os
 import tempfile
+import logging
+
+logger = logging.getLogger(__name__)
 try:
     from src.services.pdf_service import extract_text_and_meta
     from src.services.summarizer_service import summarize
@@ -61,47 +64,85 @@ def analyze_document():
             
             # Run analysis pipeline
             print(f"Starting analysis for uploaded file: {file.filename}")
+            logger.info(f"Starting analysis for file: {file.filename}")
+            
+            # Initialize default values
+            summary = "Analysis failed to generate summary."
+            plagiarism_score = 0.0
+            citation_results = []
+            fact_check_results = []
             
             # 1. Summarization
             print("Running summarization...")
-            summary = summarize(text)
+            try:
+                summary = summarize(text)
+                logger.info("Summarization completed successfully")
+            except Exception as e:
+                print(f"Summarization failed: {e}")
+                logger.error(f"Summarization failed: {e}")
+                summary = "Unable to generate summary due to processing error."
             
             # 2. Plagiarism detection
             print("Running plagiarism check...")
-            plagiarism_score = check_plagiarism(text)
+            try:
+                plagiarism_score = check_plagiarism(text)
+                logger.info(f"Plagiarism check completed: {plagiarism_score}%")
+            except Exception as e:
+                print(f"Plagiarism check failed: {e}")
+                logger.error(f"Plagiarism check failed: {e}")
+                plagiarism_score = 0.0
             
             # 3. Citation validation
             print("Validating citations...")
-            citation_results = validate_citations(text)
+            try:
+                citation_results = validate_citations(text)
+                logger.info(f"Citation validation completed: {len(citation_results)} citations found")
+            except Exception as e:
+                print(f"Citation validation failed: {e}")
+                logger.error(f"Citation validation failed: {e}")
+                citation_results = []
             
             # 4. Fact checking
             print("Running fact check...")
             try:
                 claims = extract_claims(text)
                 fact_check_results = fact_check_claims(claims) if claims else []
+                logger.info(f"Fact checking completed: {len(fact_check_results)} claims checked")
             except Exception as e:
                 print(f"Fact check failed: {e}")
+                logger.error(f"Fact check failed: {e}")
                 fact_check_results = []
             
             print(f"Analysis completed for file: {file.filename}")
             
-            # Return results
+            # Format citations for frontend
+            formatted_citations = []
+            for citation in citation_results:
+                formatted_citations.append({
+                    "reference": citation.get('raw', citation.get('cleaned_title', 'Unknown citation')),
+                    "valid": citation.get('status') == 'verified'
+                })
+            
+            # Format fact check results for frontend
+            formatted_facts = []
+            for fact in fact_check_results:
+                formatted_facts.append({
+                    "claim": fact.get('claim', 'Unknown claim'),
+                    "status": "Verified" if fact.get('status') == 'verified' else "Unverified"
+                })
+            
+            # Return results in the format expected by frontend
             return jsonify({
-                'success': True,
-                'data': {
-                    'title': title or file.filename.replace('.pdf', ''),
+                'summary': summary,
+                'plagiarism': plagiarism_score,
+                'citations': formatted_citations,
+                'fact_check': {
+                    'facts': formatted_facts
+                },
+                'stats': {
                     'word_count': word_count,
-                    'summary': summary,
-                    'plagiarism_score': plagiarism_score,
-                    'citations': [
-                        {
-                            'raw_line': citation['raw'],
-                            'cleaned_title': citation['cleaned_title'],
-                            'status': citation['status']
-                        }
-                        for citation in citation_results
-                    ],
-                    'fact_check_results': fact_check_results
+                    'plagiarism_percent': plagiarism_score,
+                    'citations_count': len(formatted_citations)
                 }
             }), 200
             
