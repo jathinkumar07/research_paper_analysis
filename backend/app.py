@@ -20,11 +20,13 @@ def create_app(config_class=Config):
     from src.routes.documents import bp as documents_bp
     from src.routes.analysis import bp as analysis_bp
     from src.routes.reports import bp as reports_bp
+    from src.routes.factcheck import factcheck_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(documents_bp)
     app.register_blueprint(analysis_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(factcheck_bp, url_prefix='/api/factcheck')
     
     # Health check endpoint
     @app.route('/health')
