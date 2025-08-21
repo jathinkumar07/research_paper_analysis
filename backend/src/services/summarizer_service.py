@@ -1,5 +1,25 @@
 import re
+import logging
 from flask import current_app
+
+def summarize_text(text: str) -> str:
+    """
+    Summarize text using HuggingFace transformers BART model.
+    
+    Args:
+        text: Input text to summarize
+        
+    Returns:
+        Summary text (100-300 tokens)
+    """
+    if not text or len(text.strip()) < 100:
+        return text.strip()  # Return original text if too short
+    
+    try:
+        return _summarize_with_hf(text)
+    except Exception as e:
+        logging.error(f"HF summarization failed, falling back to heuristic: {e}")
+        return _summarize_heuristic(text)
 
 def summarize(text: str, use_hf: bool = True) -> str:
     """
@@ -49,11 +69,11 @@ def _summarize_with_hf(text: str) -> str:
         if last_period > chunk_size * 0.7:  # If we find a period in the last 30%
             chunk = chunk[:last_period + 1]
         
-        # Generate summary
+        # Generate summary with specified token limits
         summary = _summarize_with_hf.summarizer(
             chunk, 
-            max_length=220, 
-            min_length=150, 
+            max_length=300, 
+            min_length=100, 
             do_sample=False
         )[0]['summary_text']
         

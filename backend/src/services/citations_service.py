@@ -1,7 +1,82 @@
 import re
 import requests
+import logging
 from flask import current_app
 from urllib.parse import quote
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def validate_citations(citations: list) -> list:
+    """
+    Validate citations using CrossRef API.
+    
+    Args:
+        citations: List of citation strings
+        
+    Returns:
+        List of dictionaries with citation, valid, and doi fields
+    """
+    validated_citations = []
+    
+    for citation_text in citations:
+        if not citation_text or len(citation_text.strip()) < 10:
+            continue
+            
+        # Clean and extract title from citation
+        cleaned_title = _clean_citation_title(citation_text)
+        
+        # Validate using CrossRef API
+        validation_result = _validate_citation_with_crossref(cleaned_title)
+        
+        validated_citations.append({
+            "citation": citation_text,
+            "valid": validation_result["valid"],
+            "doi": validation_result["doi"]
+        })
+    
+    return validated_citations
+
+def _validate_citation_with_crossref(title: str) -> dict:
+    """Validate a citation title using CrossRef API."""
+    if not title or len(title.strip()) < 5:
+        return {"valid": False, "doi": None}
+    
+    try:
+        # CrossRef API endpoint
+        base_url = "https://api.crossref.org/works"
+        params = {
+            "query": title.strip()[:200],  # Limit query length
+            "rows": 1,
+            "select": "title,DOI"
+        }
+        
+        headers = {
+            "User-Agent": "Research Paper Analysis Tool (mailto:your-email@example.com)"
+        }
+        
+        response = requests.get(base_url, params=params, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if 'message' in data and 'items' in data['message'] and len(data['message']['items']) > 0:
+            item = data['message']['items'][0]
+            doi = item.get('DOI')
+            return {"valid": True, "doi": doi}
+        else:
+            return {"valid": False, "doi": None}
+            
+    except requests.exceptions.Timeout:
+        logging.warning(f"CrossRef API timeout for title: {title[:50]}...")
+        return {"valid": False, "doi": None}
+    except requests.exceptions.RequestException as e:
+        logging.error(f"CrossRef API request error: {e}")
+        return {"valid": False, "doi": None}
+    except Exception as e:
+        logging.error(f"Citation validation error: {e}")
+        return {"valid": False, "doi": None}
 
 def validate(full_text: str) -> list[dict]:
     """

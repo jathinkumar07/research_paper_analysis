@@ -1,5 +1,135 @@
 import re
+import logging
 from typing import Dict, List
+
+def critique_paper(text: str) -> dict:
+    """
+    Critique paper using basic NLP and heuristics.
+    
+    Args:
+        text: Full document text
+        
+    Returns:
+        Dictionary with clarity, methodology, bias, and structure assessments
+    """
+    text_lower = text.lower()
+    
+    critique_result = {
+        "clarity": _assess_clarity(text, text_lower),
+        "methodology": _assess_methodology(text_lower),
+        "bias": _assess_bias(text_lower),
+        "structure": _assess_structure(text, text_lower)
+    }
+    
+    return critique_result
+
+def _assess_clarity(text: str, text_lower: str) -> str:
+    """Assess writing clarity and readability."""
+    issues = []
+    
+    # Sentence length analysis
+    sentences = re.split(r'[.!?]+', text)
+    sentence_lengths = [len(sentence.split()) for sentence in sentences if len(sentence.strip()) > 5]
+    
+    if sentence_lengths:
+        avg_length = sum(sentence_lengths) / len(sentence_lengths)
+        if avg_length > 25:
+            issues.append("sentences too long")
+        elif avg_length < 8:
+            issues.append("sentences too short")
+    
+    # Check for jargon
+    jargon_indicators = [
+        'aforementioned', 'heretofore', 'wherein', 'whereby', 'thereof',
+        'utilize', 'facilitate', 'implement', 'methodology'
+    ]
+    
+    jargon_count = sum(text_lower.count(word) for word in jargon_indicators)
+    if jargon_count > 15:
+        issues.append("excessive jargon")
+    
+    # Check for definitions
+    definition_indicators = ['defined as', 'refers to', 'means', 'is the', 'called']
+    definition_count = sum(text_lower.count(phrase) for phrase in definition_indicators)
+    if definition_count < 3 and len(text.split()) > 1000:
+        issues.append("lacks definitions")
+    
+    if not issues:
+        return "Good explanation with clear language"
+    else:
+        return f"Issues found: {', '.join(issues)}"
+
+def _assess_methodology(text_lower: str) -> str:
+    """Assess methodology description."""
+    methodology_terms = [
+        'method', 'methodology', 'approach', 'procedure', 'technique',
+        'experiment', 'survey', 'interview', 'analysis', 'statistical'
+    ]
+    
+    found_terms = [term for term in methodology_terms if term in text_lower]
+    
+    # Check for statistical methods
+    stats_terms = [
+        'p-value', 'significant', 'correlation', 'regression',
+        'anova', 't-test', 'chi-square', 'confidence interval'
+    ]
+    
+    found_stats = [term for term in stats_terms if term in text_lower]
+    
+    if len(found_terms) < 3:
+        return "Methodology not clearly described"
+    elif len(found_stats) == 0 and any(term in text_lower for term in ['quantitative', 'statistical', 'data']):
+        return "Statistical methods not clearly described"
+    else:
+        return "Methodology adequately described"
+
+def _assess_bias(text_lower: str) -> str:
+    """Assess potential bias in the paper."""
+    bias_indicators = [
+        'obviously', 'clearly', 'undoubtedly', 'certainly', 'definitely',
+        'always', 'never', 'all', 'none', 'everyone', 'no one'
+    ]
+    
+    strong_claims = sum(text_lower.count(word) for word in bias_indicators)
+    
+    # Check for hedging language (good for reducing bias)
+    hedge_words = [
+        'might', 'could', 'may', 'possibly', 'perhaps', 'seems to',
+        'appears to', 'suggests that', 'indicates that'
+    ]
+    
+    hedge_count = sum(text_lower.count(word) for word in hedge_words)
+    
+    if strong_claims > hedge_count * 2:
+        return "Potential bias detected - strong claims without hedging"
+    elif 'limitation' in text_lower and 'bias' in text_lower:
+        return "Bias considerations addressed"
+    else:
+        return "No apparent bias"
+
+def _assess_structure(text: str, text_lower: str) -> str:
+    """Assess document structure and organization."""
+    # Check for common academic sections
+    sections = {
+        'abstract': ['abstract'],
+        'introduction': ['introduction'],
+        'methodology': ['method', 'methodology'],
+        'results': ['result', 'findings'],
+        'discussion': ['discussion', 'conclusion'],
+        'references': ['references', 'bibliography']
+    }
+    
+    found_sections = []
+    for section_name, keywords in sections.items():
+        if any(keyword in text_lower for keyword in keywords):
+            found_sections.append(section_name)
+    
+    if len(found_sections) >= 4:
+        return "Well organized with clear sections"
+    elif len(found_sections) >= 2:
+        return "Adequately organized but could improve structure"
+    else:
+        return "Poor organization - lacks clear sections"
 
 def critique(text: str, summary: str) -> dict:
     """
