@@ -21,6 +21,7 @@ def create_app(config_class=Config):
     from src.routes.analysis import bp as analysis_bp
     from src.routes.reports import bp as reports_bp
     from src.routes.factcheck import factcheck_bp
+    from src.routes.citations import citations_bp
     from src.routes.simple_analyze import simple_analyze_bp
     
     app.register_blueprint(auth_bp)
@@ -28,17 +29,32 @@ def create_app(config_class=Config):
     app.register_blueprint(analysis_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(factcheck_bp, url_prefix='/api/factcheck')
+    app.register_blueprint(citations_bp, url_prefix='/api/citations')
     app.register_blueprint(simple_analyze_bp)
     
     # Health check endpoint
     @app.route('/health')
     def health_check():
-        return {'status': 'healthy', 'message': 'AI Research Critic API is running'}, 200
+        return {
+            'status': 'success',
+            'message': 'AI Research Critic API is running',
+            'data': {
+                'service': 'ai_research_critic',
+                'health': 'healthy'
+            }
+        }, 200
     
     # Root endpoint
     @app.route('/')
     def root():
-        return {'message': 'AI Research Critic API', 'version': '1.0.0'}, 200
+        return {
+            'status': 'success',
+            'message': 'AI Research Critic API',
+            'data': {
+                'version': '1.0.0',
+                'service': 'ai_research_critic'
+            }
+        }, 200
     
     return app
 
