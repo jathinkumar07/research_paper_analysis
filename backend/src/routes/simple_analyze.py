@@ -4,19 +4,13 @@ import tempfile
 import logging
 
 logger = logging.getLogger(__name__)
-try:
-    from src.services.pdf_service import extract_text_and_meta
-    from src.services.summarizer_service import summarize
-    from src.services.plagiarism_service import check as check_plagiarism
-    from src.services.citations_service import validate as validate_citations
-    from src.services.factcheck_service import extract_claims, fact_check_claims
-except ImportError:
-    # Use mock services if real ones are not available
-    from src.services.pdf_service_mock import extract_text_and_meta
-    from src.services.summarizer_service_mock import summarize
-    from src.services.plagiarism_service_mock import check as check_plagiarism
-    from src.services.citations_service_mock import validate as validate_citations
-    from src.services.factcheck_service_mock import extract_claims, fact_check_claims
+
+# Import real services only - no more mock fallbacks
+from src.services.pdf_service import extract_text_and_meta
+from src.services.summarizer_service import summarize
+from src.services.plagiarism_service import check as check_plagiarism
+from src.services.citations_service import validate as validate_citations
+from src.services.factcheck_service import extract_claims, fact_check_claims
 
 # Create blueprint for simple analysis (no auth required)
 simple_analyze_bp = Blueprint('simple_analyze', __name__)
