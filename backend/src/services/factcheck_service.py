@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Environment variables for Google Fact Check Tools API configuration
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_FACTCHECK_SERVICE_ACCOUNT_FILE")  # path to JSON service account file
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_FACT_CHECK_KEY")  # string API key
+GOOGLE_API_KEY = os.getenv("GOOGLE_FACT_CHECK_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_FACT_CHECK_KEY")  # string API key
 FACTCHECK_USE = os.getenv("FACTCHECK_USE", "api_key")  # "service_account" | "api_key" | "disabled"
 FACTCHECK_TIMEOUT = float(os.getenv("FACTCHECK_TIMEOUT", "8.0"))
 MAX_RETRIES = int(os.getenv("FACTCHECK_MAX_RETRIES", "3"))

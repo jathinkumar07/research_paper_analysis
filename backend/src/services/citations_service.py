@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def validate_citations(citations: list) -> list:
     """
-    Validate citations using CrossRef API when available, otherwise use mock data.
+    Validate citations using CrossRef API (free, no key required).
     
     Args:
         citations: List of citation strings
@@ -25,10 +25,6 @@ def validate_citations(citations: list) -> list:
     Returns:
         List of dictionaries with citation, valid, and doi fields
     """
-    # Check if we have API keys available
-    if not CROSSREF_API_KEY:
-        return _generate_mock_citation_results(citations)
-    
     print("✅ Using CrossRef API for citation validation")
     logger.info("Using CrossRef API for citation validation")
     

@@ -23,6 +23,8 @@ def create_app(config_class=Config):
     from src.routes.factcheck import factcheck_bp
     from src.routes.citations import citations_bp
     from src.routes.simple_analyze import simple_analyze_bp
+    from src.routes.protected_analyze import protected_analyze_bp
+    from src.routes.results import results_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(documents_bp)
@@ -31,6 +33,8 @@ def create_app(config_class=Config):
     app.register_blueprint(factcheck_bp, url_prefix='/api/factcheck')
     app.register_blueprint(citations_bp, url_prefix='/api/citations')
     app.register_blueprint(simple_analyze_bp)
+    app.register_blueprint(protected_analyze_bp)
+    app.register_blueprint(results_bp)
     
     # Health check endpoint
     @app.route('/health')

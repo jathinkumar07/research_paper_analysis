@@ -1,6 +1,10 @@
 import re
 import logging
+import os
 from flask import current_app
+
+# Global model cache to prevent reloading models on each request
+_model_cache = {}
 
 def summarize_text(text: str) -> str:
     """
@@ -47,41 +51,119 @@ def summarize(text: str, use_hf: bool = True) -> str:
     else:
         return _summarize_heuristic(text)
 
+def _get_summarizer():
+    """Get or create cached HuggingFace summarizer."""
+    if 'summarizer' not in _model_cache:
+        try:
+            from transformers import pipeline
+            
+            # Get model configuration from Flask config
+            model_name = current_app.config.get('HF_MODEL_NAME', 'facebook/bart-large-cnn')
+            cache_dir = current_app.config.get('HF_CACHE_DIR', './models_cache')
+            
+            # Ensure cache directory exists
+            os.makedirs(cache_dir, exist_ok=True)
+            
+            logging.info(f"Loading HuggingFace model: {model_name}")
+            
+            # Initialize summarizer with caching
+            _model_cache['summarizer'] = pipeline(
+                "summarization",
+                model=model_name,
+                cache_dir=cache_dir,
+                device=-1,  # Use CPU (-1) or 0 for GPU
+                framework="pt"  # PyTorch
+            )
+            
+            logging.info("HuggingFace summarizer loaded successfully")
+            
+        except ImportError as e:
+            raise Exception(f"transformers library not available: {e}")
+        except Exception as e:
+            raise Exception(f"Failed to load HuggingFace model: {e}")
+    
+    return _model_cache['summarizer']
+
 def _summarize_with_hf(text: str) -> str:
     """Summarize using HuggingFace BART model."""
     try:
-        from transformers import pipeline
+        summarizer = _get_summarizer()
         
-        # Initialize summarizer (cached after first use)
-        if not hasattr(_summarize_with_hf, 'summarizer'):
-            _summarize_with_hf.summarizer = pipeline(
-                "summarization", 
-                model="facebook/bart-large-cnn",
-                device=-1  # Use CPU
-            )
+        # Clean and prepare text
+        text = text.strip()
+        if len(text) < 100:
+            return text
         
         # Chunk text to fit model limits (~1024 tokens ≈ 1200-1600 chars)
-        chunk_size = 1200
-        chunk = text[:chunk_size]
+        chunk_size = 1000  # Conservative chunk size
+        chunks = []
         
-        # Ensure we don't cut off mid-sentence
-        last_period = chunk.rfind('.')
-        if last_period > chunk_size * 0.7:  # If we find a period in the last 30%
-            chunk = chunk[:last_period + 1]
+        # Split into chunks, preserving sentence boundaries
+        if len(text) <= chunk_size:
+            chunks = [text]
+        else:
+            # Split by paragraphs first
+            paragraphs = text.split('\n\n')
+            current_chunk = ""
+            
+            for paragraph in paragraphs:
+                if len(current_chunk) + len(paragraph) <= chunk_size:
+                    current_chunk += paragraph + "\n\n"
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = paragraph + "\n\n"
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
         
-        # Generate summary with specified token limits
-        summary = _summarize_with_hf.summarizer(
-            chunk, 
-            max_length=300, 
-            min_length=100, 
-            do_sample=False
-        )[0]['summary_text']
+        # Summarize each chunk
+        summaries = []
+        for chunk in chunks:
+            if len(chunk.strip()) < 50:  # Skip very short chunks
+                continue
+                
+            try:
+                summary = summarizer(
+                    chunk,
+                    max_length=150,  # Shorter summaries per chunk
+                    min_length=50,
+                    do_sample=False,
+                    truncation=True
+                )[0]['summary_text']
+                
+                summaries.append(summary.strip())
+                
+            except Exception as e:
+                logging.warning(f"Failed to summarize chunk: {e}")
+                continue
         
-        return summary.strip()
+        if not summaries:
+            raise Exception("Failed to generate any summaries")
         
-    except ImportError:
-        raise Exception("transformers library not available")
+        # Combine summaries
+        final_summary = ' '.join(summaries)
+        
+        # If combined summary is too long, summarize it again
+        if len(final_summary.split()) > 250:
+            try:
+                final_summary = summarizer(
+                    final_summary,
+                    max_length=200,
+                    min_length=100,
+                    do_sample=False,
+                    truncation=True
+                )[0]['summary_text']
+            except Exception as e:
+                logging.warning(f"Failed to re-summarize combined text: {e}")
+                # Just truncate if re-summarization fails
+                words = final_summary.split()
+                final_summary = ' '.join(words[:200])
+        
+        return final_summary.strip()
+        
     except Exception as e:
+        logging.error(f"HuggingFace summarization error: {e}")
         raise Exception(f"HuggingFace summarization error: {str(e)}")
 
 def _summarize_heuristic(text: str) -> str:
