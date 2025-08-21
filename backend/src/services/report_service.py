@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime
 import textwrap
+import logging
 from flask import current_app
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -9,6 +10,128 @@ from reportlab.lib.colors import HexColor, black, white
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+
+def generate_analysis_report(analysis_results: dict, output_path: str) -> str:
+    """
+    Generate analysis report PDF using ReportLab.
+    
+    Args:
+        analysis_results: Dictionary containing all analysis results
+        output_path: Path where to save the PDF report
+        
+    Returns:
+        Path to the generated PDF report
+    """
+    try:
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(output_path, pagesize=A4)
+        story = []
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Title'],
+            fontSize=24,
+            spaceAfter=30,
+            textColor=HexColor('#2563eb')
+        )
+        
+        header_style = ParagraphStyle(
+            'CustomHeader',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=12,
+            textColor=HexColor('#1e40af')
+        )
+        
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=6
+        )
+        
+        # Title
+        story.append(Paragraph("Research Paper Analysis Report", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Document Information
+        story.append(Paragraph("Analysis Summary", header_style))
+        if 'summary' in analysis_results:
+            summary_text = _wrap_text(analysis_results['summary'], 80)
+            story.append(Paragraph(summary_text, body_style))
+        story.append(Spacer(1, 15))
+        
+        # Plagiarism Results
+        if 'plagiarism' in analysis_results:
+            story.append(Paragraph("Plagiarism Analysis", header_style))
+            plagiarism = analysis_results['plagiarism']
+            
+            score = plagiarism.get('plagiarism_score', 0.0)
+            score_text = f"Overall Similarity Score: {score:.1%}"
+            story.append(Paragraph(score_text, body_style))
+            
+            if 'matching_sources' in plagiarism and plagiarism['matching_sources']:
+                story.append(Paragraph("Top Matching Sources:", body_style))
+                for source in plagiarism['matching_sources'][:5]:
+                    source_text = f"• {source['file']}: {source['score']:.1%} similarity"
+                    story.append(Paragraph(source_text, body_style))
+            
+            story.append(Spacer(1, 15))
+        
+        # Citation Validation Results
+        if 'citations' in analysis_results:
+            story.append(Paragraph("Citation Validation", header_style))
+            citations = analysis_results['citations']
+            
+            valid_count = len([c for c in citations if c.get('valid', False)])
+            total_count = len(citations)
+            
+            validation_text = f"Citations Validated: {valid_count}/{total_count}"
+            story.append(Paragraph(validation_text, body_style))
+            
+            # Show first few citations
+            for i, citation in enumerate(citations[:5]):
+                status = "✓ Valid" if citation.get('valid', False) else "✗ Invalid"
+                doi = f" (DOI: {citation['doi']})" if citation.get('doi') else ""
+                citation_text = f"{i+1}. {status}{doi}"
+                story.append(Paragraph(citation_text, body_style))
+            
+            if len(citations) > 5:
+                story.append(Paragraph(f"... and {len(citations) - 5} more citations", body_style))
+            
+            story.append(Spacer(1, 15))
+        
+        # Critique Feedback
+        if 'critique' in analysis_results:
+            story.append(Paragraph("Paper Critique", header_style))
+            critique = analysis_results['critique']
+            
+            for aspect, assessment in critique.items():
+                aspect_title = aspect.replace('_', ' ').title()
+                story.append(Paragraph(f"{aspect_title}: {assessment}", body_style))
+            
+            story.append(Spacer(1, 15))
+        
+        # Footer
+        story.append(Spacer(1, 30))
+        footer_text = f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        story.append(Paragraph(footer_text, body_style))
+        
+        # Build PDF
+        doc.build(story)
+        
+        return output_path
+        
+    except Exception as e:
+        logging.error(f"Error generating analysis report: {e}")
+        raise Exception(f"Failed to generate report: {str(e)}")
 
 def generate_report(user, document, analysis, citations: list[dict]) -> tuple[str, str]:
     """

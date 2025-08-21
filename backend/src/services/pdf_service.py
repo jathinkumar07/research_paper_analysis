@@ -1,5 +1,35 @@
 import fitz  # PyMuPDF
 import re
+import logging
+
+def extract_text_from_pdf(file_path: str) -> str:
+    """
+    Extract text from PDF file using PyMuPDF.
+    
+    Args:
+        file_path: Path to the PDF file
+        
+    Returns:
+        Extracted text as a single string with extra whitespace stripped
+    """
+    try:
+        doc = fitz.open(file_path)
+        text = ""
+        
+        # Extract text from all pages in order
+        for page in doc:
+            page_text = page.get_text("text")
+            if page_text.strip():  # Only add non-empty pages
+                text += page_text + "\n"
+        
+        doc.close()
+        
+        # Strip extra whitespace and return
+        return text.strip()
+        
+    except Exception as e:
+        logging.error(f"Failed to extract text from PDF {file_path}: {str(e)}")
+        raise Exception(f"Failed to extract text from PDF: {str(e)}")
 
 def extract_text_and_meta(path: str) -> tuple[str, int, str|None]:
     """
