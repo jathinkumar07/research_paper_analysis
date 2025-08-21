@@ -8,6 +8,7 @@ __pycache__/
 *.pyd
 *.db
 backend/fact_check_key.json
+backend/.env
 
 # React / Node
 frontend/node_modules/

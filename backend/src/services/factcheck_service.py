@@ -2,6 +2,7 @@ import os
 import time
 import requests
 import logging
+import re
 from typing import List, Dict
 import nltk
 
@@ -20,6 +21,63 @@ FACTCHECK_USE = os.getenv("FACTCHECK_USE", "api_key")  # "service_account" | "ap
 FACTCHECK_TIMEOUT = float(os.getenv("FACTCHECK_TIMEOUT", "8.0"))
 MAX_RETRIES = int(os.getenv("FACTCHECK_MAX_RETRIES", "3"))
 DELAY_BETWEEN_CALLS = float(os.getenv("FACTCHECK_DELAY", "0.5"))
+
+
+def _clean_query_for_factcheck(claim: str, max_len: int = 120) -> str:
+    """
+    Clean and prepare a claim query for the Google FactCheck API to prevent HTTP 400 errors.
+    
+    Args:
+        claim: Raw claim text to clean
+        max_len: Maximum length of the cleaned query (default 120)
+        
+    Returns:
+        Cleaned query string, or empty string if claim is empty after cleaning
+    """
+    if not claim or not claim.strip():
+        return ""
+    
+    # Remove newlines and normalize whitespace
+    cleaned = " ".join(claim.split())
+    
+    # Remove control characters and non-printable characters
+    cleaned = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', cleaned)
+    
+    # Remove problematic punctuation and quotes
+    # Keep basic punctuation but remove quotes, brackets, and other special chars
+    cleaned = re.sub(r'["\'\[\]{}()<>«»""''`]', '', cleaned)
+    
+    # Remove excessive punctuation (multiple consecutive punctuation marks)
+    cleaned = re.sub(r'[.!?]{2,}', '.', cleaned)
+    cleaned = re.sub(r'[,;:]{2,}', ',', cleaned)
+    
+    # Clean up any remaining whitespace issues
+    cleaned = " ".join(cleaned.split())
+    
+    if not cleaned:
+        return ""
+    
+    # Truncate to max_len, trying to cut at sentence boundary if possible
+    if len(cleaned) <= max_len:
+        return cleaned
+    
+    # Try to cut at a sentence boundary (period, exclamation, question mark)
+    truncated = cleaned[:max_len]
+    last_sentence_end = max(
+        truncated.rfind('.'),
+        truncated.rfind('!'),
+        truncated.rfind('?')
+    )
+    
+    if last_sentence_end > max_len * 0.6:  # Only cut at sentence if it's not too short
+        return truncated[:last_sentence_end + 1].strip()
+    else:
+        # Cut at word boundary
+        last_space = truncated.rfind(' ')
+        if last_space > max_len * 0.8:
+            return truncated[:last_space].strip()
+        else:
+            return truncated.strip()
 
 
 def extract_claims(text: str) -> List[str]:
@@ -97,8 +155,13 @@ def _call_google_factcheck_rest(query: str) -> Dict:
     if not api_key:
         raise RuntimeError("GOOGLE_API_KEY not configured")
     
+    # Clean the query to prevent API errors
+    cleaned_query = _clean_query_for_factcheck(query)
+    if not cleaned_query:
+        return {"claims": []}  # Return empty result for invalid queries
+    
     url = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
-    params = {"query": query, "key": api_key}
+    params = {"query": cleaned_query, "key": api_key}
     
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -124,9 +187,14 @@ def _call_google_factcheck_service_account(service, query: str) -> Dict:
     Returns:
         API response as dictionary
     """
+    # Clean the query to prevent API errors
+    cleaned_query = _clean_query_for_factcheck(query)
+    if not cleaned_query:
+        return {"claims": []}  # Return empty result for invalid queries
+    
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            request = service.claims().search(query=query)
+            request = service.claims().search(query=cleaned_query)
             response = request.execute()
             return response
         except Exception as e:
@@ -224,6 +292,17 @@ def fact_check_claims(claims: List[str]) -> List[Dict]:
         # Add delay between API calls to avoid rate limiting
         if i > 0:
             time.sleep(DELAY_BETWEEN_CALLS)
+        
+        # Check if claim can be cleaned for API call
+        cleaned_claim = _clean_query_for_factcheck(claim)
+        if not cleaned_claim:
+            results.append({
+                "claim": claim,
+                "status": "not_configured",
+                "fact_checks": [],
+                "error": "Claim could not be processed (too short or invalid after cleaning)"
+            })
+            continue
         
         try:
             # Call appropriate API method
